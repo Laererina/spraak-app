@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbeidshefte Uke 1</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Sikrer at vi ikke mister fokus på input-felt ved re-rendering */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i data-lucide="clipboard-list" class="text-white w-7 h-7"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Arbeidshefte Uke 1</h1>
+            </div>
+            <p class="text-lg text-gray-600 max-w-3xl">
+                Trygg kommunikasjon og grunnleggende observasjon. Bygg tillit hos beboerne gjennom enkel, tydelig og trygg kommunikasjon.
+            </p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex flex-wrap gap-1 border-b border-gray-200 mb-6 px-2 md:px-0" id="tabs-nav">
+            <!-- Fylles via JS -->
+        </nav>
+
+        <!-- Content Area -->
+        <main class="pb-20">
+            <div id="tab-ordliste" class="tab-content active"></div>
+            <div id="tab-grammatikk" class="tab-content"></div>
+            <div id="tab-rollespill" class="tab-content"></div>
+            <div id="tab-caser" class="tab-content"></div>
+        </main>
+    </div>
+
+    <!-- JavaScript Logikk -->
+    <script>
+        // --- DATA ---
+        const ORDLISTE = [
+            { id: 1, w: "Trygg", m: "Å føle seg sikker, ikke redd.", e: "Pasienten er trygg når du smiler." },
+            { id: 2, w: "Urolig", m: "Stresset, klarer ikke å sitte stille.", e: "Kari er urolig og går opp og ned i gangen." },
+            { id: 3, w: "Demens", m: "En sykdom i hjernen som påvirker hukommelsen.", e: "Mange beboere på sykehjemmet har demens." },
+            { id: 4, w: "Kognitiv svikt", m: "Problemer med å huske eller forstå ting.", e: "På grunn av kognitiv svikt, må vi snakke sakte." },
+            { id: 5, w: "Smerte", m: "Når det gjør vondt et sted i kroppen.", e: "Har du smerte i magen?" },
+            { id: 6, w: "Kvalm", m: "Når du føler at du må kaste opp.", e: "Han spiste ikke frokost fordi han var kvalm." },
+            { id: 7, w: "Svimmel", m: "Når det føles som om rommet snurrer rundt.", e: "Reis deg sakte, så du ikke blir svimmel." },
+            { id: 8, w: "Å vente", m: "Å sitte eller stå i ro til noe skjer.", e: "Kan du vente litt, jeg kommer snart tilbake." },
+            { id: 9, w: "Å lytte", m: "Å høre godt etter hva noen sier.", e: "Det er viktig å lytte til pasienten." },
+            { id: 10, w: "Å hjelpe", m: "Å gjøre noe for noen som trenger det.", e: "Jeg vil gjerne hjelpe deg med skjorten." },
+            { id: 11, w: "Å trøste", m: "Å si fine ting eller klemme noen som er lei seg.", e: "Du må trøste beboeren som gråter." },
+            { id: 12, w: "Å peke", m: "Å vise med fingeren.", e: "Kan du peke på hvor det gjør vondt?" },
+            { id: 13, w: "Å observere", m: "Å se nøye på hva som skjer med beboeren.", e: "Vi må observere om hun spiser maten sin." },
+            { id: 14, w: "Stell", m: "Å vaske og kle på en pasient (morgenstell/kveldsstell).", e: "Nå skal vi gjøre morgenstell på badet." },
+            { id: 15, w: "Frokost / Middag / Kveldsmat", m: "Dagens måltider.", e: "Hva vil du ha til frokost i dag?" },
+            { id: 16, w: "Tørst", m: "Når man vil ha noe å drikke.", e: "Er du tørst? Vil du ha et glass vann?" },
+            { id: 17, w: "Sulten", m: "Når man vil ha noe å spise.", e: "Du må si ifra når du er sulten." },
+            { id: 18, w: "Å fryse", m: "Når man er kald og trenger et teppe eller genser.", e: "Sitter du her og fryser?" },
+            { id: 19, w: "Pårørende", m: "Familie eller venner til pasienten.", e: "Pårørende kommer på besøk klokken fem." },
+            { id: 20, w: "Rolig", m: "Avslappet, ikke stresset (eller å gjøre noe sakte).", e: "Du må snakke med en rolig stemme." },
+            { id: 21, w: "Kroppsspråk", m: "Hva du 'sier' med ansiktet, hendene og kroppen.", e: "Positivt kroppsspråk skaper tillit." },
+            { id: 22, w: "Øyekontakt", m: "Å se den andre personen i øynene.", e: "Husk å ha øyekontakt når du snakker til Rolf." },
+            { id: 23, w: "\"Jeg vil hjelpe deg\"", m: "Viser at du er der for beboeren.", e: "Ikke vær redd, jeg vil hjelpe deg." },
+            { id: 24, w: "\"Har du vondt?\"", m: "Spørsmål for å sjekke smerte.", e: "Du holder deg til magen, har du vondt?" },
+            { id: 25, w: "\"Er du tørst?\"", m: "Spørsmål for å sjekke om de trenger drikke.", e: "Du hoster mye, er du tørst?" },
+            { id: 26, w: "\"Kan jeg få se?\"", m: "Spørsmål for å sjekke en skade, e.l.", e: "Du sier armen er vond. Kan jeg få se?" },
+            { id: 27, w: "\"Gjør det vondt her?\"", m: "Konkret spørsmål med peking.", e: "Hvis jeg trykker på skulderen, gjør det vondt her?" },
+            { id: 28, w: "\"Vent litt\"", m: "Beskjed om at beboer må være tålmodig kort tid.", e: "Vent litt her i stolen, jeg skal bare hente kaffe." },
+            { id: 29, w: "\"Kom her\" / \"Kom hit\"", m: "Beskjed om å bevege seg mot deg.", e: "Kom her, så skal vi gå sammen til stua." },
+            { id: 30, w: "\"Sitt ned\"", m: "Beskjed om å ta plass på stol/seng.", e: "Sitt ned på sengekanten, vær så snill." }
+        ];
+
+        const GRAMMATIKK_A = [
+            { id: "A1", q: "________ heter du?", a: "Hva" },
+            { id: "A2", q: "________ har du vondt?", a: "Hvor" },
+            { id: "A3", q: "________ vil du ha til frokost?", a: "Hva" },
+            { id: "A4", q: "________ har du det i dag, Kari?", a: "Hvordan" },
+            { id: "A5", q: "________ ligger brillene mine?", a: "Hvor" },
+            { id: "A6", q: "________ kommer datteren min på besøk?", a: "Når" },
+            { id: "A7", q: "________ er det som roper i gangen?", a: "Hvem" },
+            { id: "A8", q: "________ vil du ikke spise maten din?", a: "Hvorfor" },
+            { id: "A9", q: "________ kan jeg hjelpe deg med?", a: "Hva" },
+            { id: "A10", q: "________ gammel er du?", a: "Hvor" },
+            { id: "A11", q: "________ fant du Kari? På gulvet?", a: "Hvor" },
+            { id: "A12", q: "________ føles magen i dag? Er den bedre?", a: "Hvordan" },
+            { id: "A13", q: "________ er den nye pasienten på rom 4?", a: ["Hvem", "Hvor"] },
+            { id: "A14", q: "________ skal vi spise middag?", a: "Når" },
+            { id: "A15", q: "________ gråter du, Jens? Har det skjedd noe?", a: "Hvorfor" }
+        ];
+
+        const GRAMMATIKK_B = [
+            { id: "B16", q: "(Å vente) ________ her litt, jeg kommer snart.", a: "Vent" },
+            { id: "B17", q: "(Å se) ________ på meg, Kari.", a: "Se" },
+            { id: "B18", q: "(Å komme) ________ hit til meg, er du snill.", a: "Kom" },
+            { id: "B19", q: "(Å sitte) ________ ned i denne stolen.", a: "Sitt" },
+            { id: "B20", q: "(Å ta) ________ en slurk av vannet.", a: "Ta" },
+            { id: "B21", q: "(Å høre) ________ på hva jeg sier.", a: "Hør" },
+            { id: "B22", q: "(Å prøve) ________ å reise deg sakte opp.", a: "Prøv" },
+            { id: "B23", q: "(Å drikke) ________ opp kaffen før den blir kald.", a: "Drikk" },
+            { id: "B24", q: "(Å smile) ________ til meg!", a: "Smil" },
+            { id: "B25", q: "(Å gi) ________ meg hånden din.", a: "Gi" },
+            { id: "B26", q: "(Å sove) ________ litt nå, du er trøtt.", a: "Sov" },
+            { id: "B27", q: "(Å peke) ________ på hvor du har vondt.", a: "Pek" },
+            { id: "B28", q: "(Å slappe) ________ av, jeg passer på deg.", a: "Slapp" },
+            { id: "B29", q: "(Å åpne) ________ munnen, så jeg kan pusse tennene.", a: "Åpne" },
+            { id: "B30", q: "(Å lukke) ________ øynene hvis du er svimmel.", a: "Lukk" }
+        ];
+
+        const GRAMMATIKK_C = [
+            { id: "C31", q: "Du fryser på beina.", a: "Fryser du på beina?" },
+            { id: "C32", q: "Han har smerter i hoften.", a: "Har han smerter i hoften?" },
+            { id: "C33", q: "Du vil ha en brødskive.", a: "Vil du ha en brødskive?" },
+            { id: "C34", q: "Vi skal gå på toalettet.", a: "Skal vi gå på toalettet?" },
+            { id: "C35", q: "Pasienten er urolig.", a: "Er pasienten urolig?" },
+            { id: "C36", q: "Du har sovet godt i natt.", a: "Har du sovet godt i natt?" },
+            { id: "C37", q: "Datteren din kommer i dag.", a: "Kommer datteren din i dag?" },
+            { id: "C38", q: "Det gjør vondt i hodet.", a: "Gjør det vondt i hodet?" },
+            { id: "C39", q: "Du kan reise deg opp.", a: "Kan du reise deg opp?" },
+            { id: "C40", q: "Du trenger hjelp.", a: "Trenger du hjelp?" }
+        ];
+
+        const GRAMMATIKK_D = [
+            { id: "D41", q: "du / Hvor / vondt / har / ?", a: "Hvor har du vondt?" },
+            { id: "D42", q: "ha / du / vil / vann / Litt / ?", a: "Vil du ha litt vann?" },
+            { id: "D43", q: "hjelpe / Kan / deg / jeg / ?", a: "Kan jeg hjelpe deg?" },
+            { id: "D44", q: "er / i dag / formen / Hvordan / ?", a: "Hvordan er formen i dag?" },
+            { id: "D45", q: "du / litt / Vent / kan / ?", a: "Kan du vente litt?" },
+            { id: "D46", q: "middag / Når / vi / skal / spise / ?", a: "Når skal vi spise middag?" },
+            { id: "D47", q: "heter / sykepleieren / Hva / ?", a: "Hva heter sykepleieren?" },
+            { id: "D48", q: "datter / Hvem / din / er / ?", a: ["Hvem er din datter?", "Hvem er datteren din?"] },
+            { id: "D49", q: "fryser / du / Hvorfor / ?", a: "Hvorfor fryser du?" },
+            { id: "D50", q: "tærne / du / Kan / bevege / ?", a: "Kan du bevege tærne?" }
+        ];
+
+        const ROLLESPILL = [
+            { title: "Dusj-nekt", desc: "Beboer (Olav, 80 med demens) nekter å bli med på badet for å dusje. Han er sint og forstår ikke hvorfor han må. Du må snakke rolig og overbevise ham." },
+            { title: "Leter etter mor", desc: "Beboer (Astrid, 92 med demens) gråter og leter etter moren sin. Moren er død. Du må bruke trøstende ord, øyekontakt og vennlig kroppsspråk." },
+            { title: "Magesmerter", desc: "Beboer ringer på, men klarer ikke si akkurat hva som er galt. Du må bruke ja/nei-spørsmål og be pasienten peke for å finne ut at de har vondt i magen." },
+            { title: "Feil rom", desc: "En urolig beboer har gått inn på feil rom og lagt seg i en annens seng. Du må veilede personen vennlig ut og tilbake til eget rom ved hjelp av imperativ ('Kom her', 'Se her')." },
+            { title: "Kveldsstell", desc: "Beboer er veldig trøtt og lite samarbeidsvillig under tannpuss. Du må bruke enkle beskjeder ('Åpne munnen', 'Spytt ut')." },
+            { title: "Frossen", desc: "Du kommer inn på rommet. Beboer skjelver, men sier ingenting. Du må observere situasjonen, stille spørsmål og finne frem et teppe." },
+            { title: "Matnekt", desc: "Det er lunsj, men beboeren lukker munnen og rister på hodet. Spør om kvalme, smerte, eller om beboeren er mett/tørst i stedet." },
+            { title: "Svimmel", desc: "Beboer reiser seg for fort fra stolen i stua og holder på å falle. Håndter situasjonen med rolige beskjeder ('Sitt ned', 'Vent litt')." },
+            { title: "Sølt på seg", desc: "Beboeren har sølt kaffe på den hvite skjorten sin og er veldig flau og stresset. Vis empati ('Det går helt fint') og hjelp til." },
+            { title: "Høreapparatet mangler", desc: "Beboeren hører ikke hva du sier og blir frustrert. Du må bruke tydelig kroppsspråk, peke, og lete etter høreapparatet mens du signaliserer trygghet." },
+            { title: "Ny beboer", desc: "En ny beboer har akkurat flyttet inn. Du skal presentere deg, si hva du heter og at du er der for å hjelpe, og spørre om personen trenger noe akkurat nå." },
+            { title: "Telefon fra pårørende", desc: "Pårørende (din partner i rollespillet) ringer og er bekymret fordi beboeren hørtes trist ut i går kveld. Du må svare profesjonelt og berolige." },
+            { title: "Vente på hjelp", desc: "Beboer på stua roper og vil ha hjelp til toalettet, men du står midt i en situasjon med en annen. Du må forklare at beboeren må vente to minutter, på en vennlig måte." },
+            { title: "Glemt hvor de er", desc: "Beboeren er redd og spør: 'Hvor er jeg? Hvem er du?'. Du må orientere personen på en trygg og rolig måte ('Du er trygg, du er på sykehjemmet...')." },
+            { title: "Urolig om kvelden", desc: "Beboeren står opp fra sengen gjentatte ganger om natten. Du må bruke 'Jeg vil hjelpe deg'-fraser for å finne ut om de må på do, eller om de har smerter." }
+        ];
+
+        const CASER = [
+            { id: 1, text: "Jens (82) går urolig opp og ned korridoren og ser stresset ut.", task: "Skriv ett spørsmål for å finne ut hvorfor han er urolig, og én vennlig imperativ-setning for å få ham til å sette seg ned med deg.", fasit: "Er du urolig, Jens? Kom og sett deg her sammen med meg." },
+            { id: 2, text: "Kari (88) holder seg til brystet, puster tungt, og har lukkede øyne.", task: "Skriv to ja/nei-spørsmål du vil stille henne med en gang.", fasit: "Har du vondt i brystet? Er du kvalm?" },
+            { id: 3, text: "Du skal hjelpe Per (75) på do, men han sier 'nei, gå vekk!'.", task: "Hvordan kan du bruke kroppsspråk og én trygghets-setning for å roe ham ned før du prøver igjen? Skriv ned.", fasit: "(Går ned på øyehøyde, puster rolig, smiler): Jeg forstår. Jeg vil bare hjelpe deg, Per." },
+            { id: 4, text: "Olga (90) begynner å gråte ved matbordet uten å si hvorfor.", task: "Hva sier du til henne? Skriv et spørsmål med spørreordet 'Hva', og en setning som viser trøst.", fasit: "Hva er det som er galt, Olga? Ikke vær lei deg, jeg er her sammen med deg." },
+            { id: 5, text: "En pårørende ringer og sier: 'Mor klaget over smerter i foten da jeg snakket med henne i går.'", task: "Hva kan du svare (kort og profesjonelt) for å berolige pårørende om at du vil sjekke dette nå?", fasit: "Jeg forstår at du er bekymret. Jeg skal gå inn og sjekke foten hennes med en gang." },
+            { id: 6, text: "Rolf (85) har demens. Han spør 'Når kommer bussen?' mens han sitter i rullestolen sin på sykehjemmet.", task: "Hvordan svarer du uten å krangle med ham, men likevel avlede ham? Skriv én til to setninger.", fasit: "Bussen kommer ikke før i morgen, Rolf. Kom, så skal vi drikke litt kaffe mens vi venter." },
+            { id: 7, text: "Du finner Agnes (89) på gulvet. Hun gråter, men klarer ikke å forklare hva som skjedde.", task: "Skriv tre helt enkle spørsmål du vil stille henne for å finne ut om noe er brukket/skadet.", fasit: "Har du vondt? Kan du bevege beina? Klarer du å puste rolig?" },
+            { id: 8, text: "Gunnar (78) spytter ut medisinene sine. Du må be ham åpne munnen og prøve igjen.", task: "Formuler dette ved hjelp av en vennlig imperativ og et spørsmål om hvorfor han spyttet.", fasit: "Åpne munnen, Gunnar. Hvorfor spyttet du, er tablettene vonde å svelge?" },
+            { id: 9, text: "Du skal vaske håret til Berit i dusjen. Hun er redd for å få vann i øynene.", task: "Skriv to setninger ('steg for steg') du sier til henne under dusjingen for at hun skal føle seg trygg.", fasit: "Lukk øynene dine nå, Berit. Nå tar jeg litt vann på bakhodet ditt." },
+            { id: 10, text: "Du må hjelpe en kollega inne hos en pasient, og en annen beboer i gangen drar deg i armen for å få hjelp akkurat nå.", task: "Hva sier du (bruk ordet 'vente') for å sette en høflig grense?", fasit: "Du må vente litt her, jeg skal bare hjelpe inne på rommet først. Jeg kommer snart tilbake til deg." },
+            { id: 11, text: "Anna (81) sier: 'Jeg er så svimmel'. Hun står midt på stuegulvet.", task: "Skriv en vennlig ordre (imperativ) om hva hun må gjøre umiddelbart, og hva du vil gjøre.", fasit: "Sitt ned på gulvet med en gang! Jeg skal hente en stol til deg." },
+            { id: 12, text: "Du serverer kveldsmat. Beboeren ser på brødskiven med kaviar og ser kvalm ut.", task: "Spør om vedkommende ikke liker maten, og tilby noe annet. Skriv ordrett hva du sier.", fasit: "Liker du ikke kaviar? Vil du at jeg skal smøre en brødskive med ost til deg i stedet?" },
+            { id: 13, text: "Beboer har glemt hvem du er og blir redd når du kommer inn med medisiner.", task: "Skriv nøyaktig hvordan du presenterer deg og forklarer hvorfor du er der (2 setninger).", fasit: "Hei, jeg heter [Ditt navn], og jeg jobber her på sykehjemmet. Nå har jeg med kveldsmedisinen din, så du kan sove godt." },
+            { id: 14, text: "Pasienten kaster teppet på gulvet midt på natten og føler seg altfor varm, men termometeret viser bare vanlig romtemperatur.", task: "Hvordan bekrefter du pasientens opplevelse (empati), og hva spør du om du kan gjøre?", fasit: "Er det for varmt for deg? Skal jeg åpne vinduet litt så du får litt frisk luft?" },
+            { id: 15, text: "Du observerer at gangen (måten pasienten går på) til Herr Nilsen har endret seg. Han halter plutselig på høyre bein.", task: "Hva sier du til Herr Nilsen for å spørre om den høyre foten, og om du kan få se på den?", fasit: "Gjør det vondt i beinet ditt i dag, Herr Nilsen? Kan jeg få se på foten din?" }
+        ];
+
+        // --- STATE ---
+        let activeTab = 'ordliste';
+        
+        // Ordliste state
+        let searchTerm = "";
+        let flippedCards = {};
+        
+        // Grammatikk state
+        let quizAnswers = {};
+        let quizShowResults = { A: false, B: false, C: false, D: false };
+        
+        // Rollespill state
+        let randomCardMode = false;
+        let randomCardIndex = null;
+        
+        // Caser state
+        let showFasitMap = {};
+        let userNotes = {};
+
+        // --- NAVIGATION ---
+        const tabs = [
+            { id: 'ordliste', icon: 'book', label: '1. Ordliste' },
+            { id: 'grammatikk', icon: 'check', label: '2. Grammatikk' },
+            { id: 'rollespill', icon: 'users', label: '3. Rollespill' },
+            { id: 'caser', icon: 'message-circle', label: '4. Caser' }
+        ];
+
+        function renderNav() {
+            const navHTML = tabs.map(tab => `
+                <button
+                    onclick="switchTab('${tab.id}')"
+                    class="flex items-center space-x-2 px-4 py-3 font-medium rounded-t-lg transition-colors duration-200 ${
+                        activeTab === tab.id
+                            ? 'bg-white text-blue-700 border-t-2 border-x-2 border-blue-500 shadow-[0_-2px_5px_rgba(0,0,0,0.05)]'
+                            : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-b-2 border-transparent'
+                    }"
+                >
+                    <i data-lucide="${tab.icon}" class="w-[18px] h-[18px]"></i>
+                    <span>${tab.label}</span>
+                </button>
+            `).join('');
+            document.getElementById('tabs-nav').innerHTML = navHTML;
+            
+            // Bytt innhold
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${activeTab}`).classList.add('active');
+            
+            lucide.createIcons();
+        }
+
+        function switchTab(tabId) {
+            activeTab = tabId;
+            renderNav();
+            if (tabId === 'ordliste') renderOrdliste();
+            if (tabId === 'grammatikk') renderGrammatikk();
+            if (tabId === 'rollespill') renderRollespill();
+            if (tabId === 'caser') renderCaser();
+            lucide.createIcons();
+        }
+
+        // --- ORDLISTE FUNKSJONER ---
+        function playAudio(text, event) {
+            event.stopPropagation();
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'nb-NO';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleCard(id) {
+            flippedCards[id] = !flippedCards[id];
+            renderOrdlisteGrid();
+            lucide.createIcons();
+        }
+
+        function updateSearch(value) {
+            searchTerm = value;
+            renderOrdlisteGrid();
+            lucide.createIcons();
+        }
+
+        function renderOrdlisteGrid() {
+            const filteredWords = ORDLISTE.filter(item => 
+                item.w.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                item.m.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+            
+            if (filteredWords.length === 0) {
+                html += `</div><p class="text-center text-gray-500 py-10">Ingen ord funnet for "${searchTerm}".</p>`;
+            } else {
+                html += filteredWords.map(item => {
+                    const isFlipped = flippedCards[item.id];
+                    const safeWord = item.w.replace(/'/g, "\\'"); // Escape for inline onclick
+                    return `
+                        <div 
+                            onclick="toggleCard(${item.id})"
+                            class="cursor-pointer min-h-[140px] p-5 rounded-xl border transition-all duration-300 flex flex-col justify-center items-center text-center shadow-sm hover:shadow-md relative ${
+                                isFlipped ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
+                            }"
+                        >
+                            <button 
+                                onclick="playAudio('${safeWord}', event)"
+                                class="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded-full transition-colors z-10"
+                                title="Hør uttale"
+                            >
+                                <i data-lucide="volume-2" class="w-5 h-5"></i>
+                            </button>
+
+                            ${!isFlipped ? `
+                                <div class="mt-2">
+                                    <span class="text-sm font-medium text-blue-500 mb-2 block">Kort ${item.id}</span>
+                                    <h3 class="text-lg font-bold text-gray-800">${item.w}</h3>
+                                </div>
+                            ` : `
+                                <div class="w-full text-left pt-2">
+                                    <h3 class="text-sm font-bold text-blue-700 border-b border-blue-200 pb-1 mb-2">${item.w}</h3>
+                                    <p class="text-sm text-gray-800 mb-2"><strong>Betydning:</strong> ${item.m}</p>
+                                    <p class="text-sm text-gray-600 italic">"${item.e}"</p>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }).join('');
+                html += `</div>`;
+            }
+            
+            const gridContainer = document.getElementById('ordliste-grid-container');
+            if(gridContainer) gridContainer.innerHTML = html;
+        }
+
+        function renderOrdliste() {
+            document.getElementById('tab-ordliste').innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                        <h2 class="text-xl font-bold text-gray-800 mb-2">Ordliste (30 ord, fraser og uttrykk)</h2>
+                        <p class="text-gray-600 mb-6">Klikk på kortene for å snu dem og se forklaring og eksempel. Bruk søkefeltet for å finne spesifikke ord.</p>
+                        
+                        <div class="relative mb-6">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <input
+                                type="text"
+                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="Søk i ordlisten..."
+                                value="${searchTerm}"
+                                oninput="updateSearch(this.value)"
+                            />
+                        </div>
+                        <div id="ordliste-grid-container"></div>
+                    </div>
+                </div>
+            `;
+            renderOrdlisteGrid();
+        }
+
+        // --- GRAMMATIKK FUNKSJONER ---
+        function updateAnswer(id, val) {
+            quizAnswers[id] = val;
+        }
+
+        function sjekkSvar(sectionId) {
+            quizShowResults[sectionId] = true;
+            renderGrammatikk();
+            lucide.createIcons();
+        }
+
+        function checkAnswer(userAns, correctAns) {
+            if (!userAns) return false;
+            const cleanUser = userAns.toLowerCase().trim().replace(/[.?]/g, '');
+            if (Array.isArray(correctAns)) {
+                return correctAns.some(a => cleanUser === a.toLowerCase().trim().replace(/[.?]/g, ''));
+            }
+            return cleanUser === correctAns.toLowerCase().trim().replace(/[.?]/g, '');
+        }
+
+        function generateQuizSection(title, description, questions, sectionId) {
+            const showResults = quizShowResults[sectionId];
+            let score = 0;
+            
+            const questionsHtml = questions.map((q, index) => {
+                const userAns = quizAnswers[q.id] || '';
+                const isCorrect = showResults && checkAnswer(userAns, q.a);
+                const isWrong = showResults && !isCorrect;
+                if (isCorrect) score++;
+
+                let bgClass = 'bg-gray-50 border-gray-200';
+                let inputClass = 'border-gray-300 focus:ring-blue-200 focus:border-blue-400';
+                
+                if (isCorrect) {
+                    bgClass = 'bg-green-50 border-green-200';
+                    inputClass = 'border-green-400 focus:ring-green-200';
+                } else if (isWrong) {
+                    bgClass = 'bg-red-50 border-red-200';
+                    inputClass = 'border-red-400 focus:ring-red-200';
+                }
+
+                const fasitText = Array.isArray(q.a) ? q.a.join(" eller ") : q.a;
+
+                return `
+                    <div class="p-4 rounded-md border ${bgClass}">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <span class="font-semibold text-gray-500 min-w-[30px]">${index + 1}.</span>
+                            <span class="flex-grow text-gray-800">${q.q}</span>
+                            <input
+                                type="text"
+                                value="${userAns}"
+                                oninput="updateAnswer('${q.id}', this.value)"
+                                class="flex-grow sm:max-w-[250px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${inputClass}"
+                                placeholder="Ditt svar..."
+                            />
+                            ${showResults ? `
+                                <div class="min-w-[24px]">
+                                    ${isCorrect 
+                                        ? `<i data-lucide="check" class="text-green-500 w-6 h-6"></i>` 
+                                        : `<i data-lucide="x" class="text-red-500 w-6 h-6"></i>`}
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${isWrong ? `
+                            <div class="mt-2 text-sm text-red-600 pl-10">
+                                <strong>Fasit:</strong> ${fasitText}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">${title}</h3>
+                    <p class="text-gray-600 mb-6 text-sm">${description}</p>
+                    <div class="space-y-4">
+                        ${questionsHtml}
+                    </div>
+                    <div class="mt-6 flex items-center justify-between">
+                        <button
+                            onclick="sjekkSvar('${sectionId}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                        >
+                            Sjekk svar
+                        </button>
+                        ${showResults ? `
+                            <div class="text-lg font-bold text-gray-800">
+                                Score: <span class="${score === questions.length ? 'text-green-600' : 'text-blue-600'}">${score} / ${questions.length}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGrammatikk() {
+            document.getElementById('tab-grammatikk').innerHTML = `
+                <div class="space-y-2">
+                    <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg mb-6">
+                        <h2 class="text-xl font-bold text-blue-900 mb-2">Grammatikkoppgaver</h2>
+                        <p class="text-blue-800 text-sm">Øv på å stille spørsmål og gi tydelige beskjeder. Fyll inn svarene dine og trykk på "Sjekk svar" for å rette.</p>
+                    </div>
+                    ${generateQuizSection("Del A: Spørreord", "Sett inn riktig spørreord: Hvem, Hva, Hvor, Hvordan, Når, Hvorfor.", GRAMMATIKK_A, "A")}
+                    ${generateQuizSection("Del B: Vennlig imperativ", "Gi en beskjed. Husk at imperativ er verbet uten 'e' til slutt. (Eksempel: Å spise -> Spis)", GRAMMATIKK_B, "B")}
+                    ${generateQuizSection("Del C: Lag ja/nei-spørsmål", "Gjør om påstanden til et spørsmål ved å flytte verbet til posisjon 1. (Eksempel: Du er kvalm. -> Er du kvalm?)", GRAMMATIKK_C, "C")}
+                    ${generateQuizSection("Del D: Ordstilling", "Sett ordene i riktig rekkefølge for å lage spørsmål. Pass på stor forbokstav og spørsmålstegn.", GRAMMATIKK_D, "D")}
+                </div>
+            `;
+        }
+
+        // --- ROLLESPILL FUNKSJONER ---
+        function drawRandomCard() {
+            randomCardIndex = Math.floor(Math.random() * ROLLESPILL.length);
+            randomCardMode = true;
+            renderRollespill();
+            lucide.createIcons();
+        }
+
+        function closeRandomCard() {
+            randomCardMode = false;
+            renderRollespill();
+            lucide.createIcons();
+        }
+
+        function renderRollespill() {
+            const cardsHtml = ROLLESPILL.map((item, index) => `
+                <div class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-gray-50">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="bg-blue-100 text-blue-800 font-bold w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                            ${index + 1}
+                        </div>
+                        <h3 class="font-bold text-gray-800">${item.title}</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed">${item.desc}</p>
+                </div>
+            `).join('');
+
+            let randomCardHtml = '';
+            if (randomCardMode && randomCardIndex !== null) {
+                const card = ROLLESPILL[randomCardIndex];
+                randomCardHtml = `
+                    <div class="mb-8 p-6 bg-teal-50 border-2 border-teal-200 rounded-xl relative">
+                        <button 
+                            onclick="closeRandomCard()"
+                            class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                        >
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                        <span class="text-teal-600 font-bold tracking-wider text-xs uppercase mb-2 block">Ditt Scenario</span>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">${card.title}</h3>
+                        <p class="text-gray-700 text-lg leading-relaxed">${card.desc}</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('tab-rollespill').innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800 mb-2">Rollespill (15 situasjoner)</h2>
+                            <p class="text-gray-600 text-sm max-w-2xl">
+                                Arbeid i par. En er helsefagarbeider/sykepleier, den andre er pasient (beboer). 
+                                Bruk ordene og spørsmålene dere har lært. Bytt på rollene.
+                            </p>
+                        </div>
+                        <button 
+                            onclick="drawRandomCard()"
+                            class="flex items-center space-x-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md transition-colors whitespace-nowrap shadow-sm"
+                        >
+                            <i data-lucide="refresh-cw" class="w-[18px] h-[18px]"></i>
+                            <span>Trekk tilfeldig kort</span>
+                        </button>
+                    </div>
+                    ${randomCardHtml}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- CASER FUNKSJONER ---
+        function updateNote(id, val) {
+            userNotes[id] = val;
+        }
+
+        function toggleFasit(id) {
+            showFasitMap[id] = !showFasitMap[id];
+            renderCaser();
+            lucide.createIcons();
+        }
+
+        function renderCaser() {
+            const caserHtml = CASER.map(c => {
+                const noteVal = userNotes[c.id] || '';
+                const showFasit = showFasitMap[c.id];
+
+                return `
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                        <div class="p-5 border-b border-gray-100 bg-gray-50">
+                            <div class="flex items-start gap-3">
+                                <span class="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded">Case ${c.id}</span>
+                                <p class="text-gray-800 font-medium">${c.text}</p>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <p class="text-blue-800 text-sm font-semibold mb-3">Oppgave: ${c.task}</p>
+                            <textarea
+                                oninput="updateNote(${c.id}, this.value)"
+                                class="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[100px] mb-4"
+                                placeholder="Skriv ditt svar her..."
+                            >${noteVal}</textarea>
+                            
+                            <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                                <button
+                                    onclick="toggleFasit(${c.id})"
+                                    class="flex items-center space-x-2 text-sm font-medium text-teal-600 hover:text-teal-800 transition-colors"
+                                >
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                    <span>${showFasit ? 'Skjul løsningsforslag' : 'Vis løsningsforslag'}</span>
+                                </button>
+                            </div>
+
+                            ${showFasit ? `
+                                <div class="mt-4 p-4 bg-teal-50 border border-teal-100 rounded-md">
+                                    <h4 class="text-xs font-bold text-teal-800 uppercase tracking-wider mb-1">Forslag til svar:</h4>
+                                    <p class="text-teal-900">${c.fasit}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('tab-caser').innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                        <h2 class="text-xl font-bold text-gray-800 mb-2">Caseoppgaver for skriftlig trening</h2>
+                        <p class="text-gray-600 text-sm">
+                            Les de korte situasjonene. Skriv ned hvordan du vil snakke i situasjonen. 
+                            Når du har forsøkt selv, kan du klikke på "Vis løsningsforslag" for inspirasjon.
+                        </p>
+                    </div>
+                    <div class="space-y-6">
+                        ${caserHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            renderNav();
+            switchTab('ordliste');
+        };
+    </script>
+</body>
+</html>

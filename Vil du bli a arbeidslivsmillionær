@@ -1,0 +1,348 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Users, Phone, Scissors, Trophy, AlertCircle, RotateCcw, Timer } from 'lucide-react';
+
+const App = () => {
+  const [gameState, setGameState] = useState('start'); // start, playing, won, lost
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [lifelines, setLifelines] = useState({ fiftyFifty: true, phoneFriend: true, askAudience: true });
+  const [removedOptions, setRemovedOptions] = useState([]);
+  const [showHint, setShowHint] = useState(null);
+  const [shuffledQuestions, setShuffledQuestions] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(30);
+  
+  const timerRef = useRef(null);
+
+  const moneyLadder = [
+    "1 000", "2 000", "3 000", "5 000", "10 000", 
+    "20 000", "40 000", "80 000", "150 000", "250 000", 
+    "400 000", "600 000", "800 000", "900 000", "1 000 000"
+  ];
+
+  const rawQuestions = [
+    {
+      q: "Hva er den vanligste arbeidstiden for en full stilling i uka i Norge?",
+      a: ["30 timer", "37,5 timer", "40 timer", "45 timer"],
+      correct: 1,
+      hint: "Husk å trekke fra lunsjpausen på 30 minutter hver dag."
+    },
+    {
+      q: "Hva kalles lønn før skatt er trukket fra?",
+      a: ["Nettolønn", "Bruttolønn", "Feriepenger", "Overtidslønn"],
+      correct: 1,
+      hint: "Det er det 'store' tallet som står øverst på kontrakten."
+    },
+    {
+      q: "Hvor mange dager kan man vanligvis bruke egenmelding av gangen?",
+      a: ["1 dag", "3 dager", "7 dager", "14 dager"],
+      correct: 1,
+      hint: "Etter dette må du vanligvis ha sykemelding fra lege."
+    },
+    {
+      q: "Hva betyr begrepet 'flat struktur' på en norsk arbeidsplass?",
+      a: ["Alle har samme lønn", "Kontoret er i én etasje", "Kort vei og uformell tone mellom sjef og ansatt", "Man kan ikke sitte på stoler"],
+      correct: 2,
+      hint: "Det handler om makt og kommunikasjon."
+    },
+    {
+      q: "Hvem har hovedansvaret for at arbeidsmiljøet er trygt og godt?",
+      a: ["Politiet", "Arbeidsgiver (sjefen)", "NAV", "Verneombudet"],
+      correct: 1,
+      hint: "Selv om alle bidrar, er det den som ansetter som har ansvaret."
+    },
+    {
+      q: "Hva er den lovbestemte ferien i Norge ifølge Ferieloven?",
+      a: ["2 uker", "3 uker", "4 uker og 1 dag", "6 uker"],
+      correct: 2,
+      hint: "Mange har 5 uker via tariffavtale, men loven sier litt over 4."
+    },
+    {
+      q: "Hva står forkortelsen HMS for?",
+      a: ["Helse, Miljø og Sikkerhet", "Hjelp Med Skatten", "Hele Morgenen Sover", "Høyere Måneds-Slutt"],
+      correct: 0,
+      hint: "Dette er ekstremt viktig på alle norske arbeidsplasser."
+    },
+    {
+      q: "Hva skjer med feriepengene dine?",
+      a: ["De betales hver måned", "De spares og betales ut året etter opptjening", "De trekkes som skatt", "Man får dem bare hvis man slutter"],
+      correct: 1,
+      hint: "Du tjener dem i år, men får dem neste sommer."
+    },
+    {
+      q: "Hva er 'prøvetid'?",
+      a: ["Tiden man bruker på å ta lappen", "De første månedene i ny jobb med kortere oppsigelsestid", "En test man må ta før man søker", "Tid man jobber uten lønn"],
+      correct: 1,
+      hint: "Det er en gjensidig periode for å se om man passer i jobben."
+    },
+    {
+      q: "Hva gjør et verneombud?",
+      a: ["Passer på at ingen stjeler", "Representerer de ansatte i saker om arbeidsmiljø", "Bestemmer hvem som skal få ferie", "Lager mat i kantina"],
+      correct: 1,
+      hint: "De er ansattes vaktbikkje for helse og sikkerhet."
+    },
+    {
+      q: "Hva er en 'tariffavtale'?",
+      a: ["En avtale om parkering", "En skriftlig avtale mellom fagforening og arbeidsgiver", "En oversikt over alle ansatte", "En lov om ferie"],
+      correct: 1,
+      hint: "Denne regulerer ofte lønn og rettigheter utover loven."
+    },
+    {
+      q: "Hva er maksimal overtid per uke ifølge Arbeidsmiljøloven (uten spesialavtale)?",
+      a: ["5 timer", "10 timer", "20 timer", "Det er ingen grense"],
+      correct: 1,
+      hint: "Loven skal beskytte ansatte mot å jobbe for mye."
+    },
+    {
+      q: "Når har man rett på lunsjpause etter loven?",
+      a: ["Når man jobber mer enn 2 timer", "Når man jobber mer enn 5,5 timer", "Kun hvis man jobber natt", "Aldri"],
+      correct: 1,
+      hint: "De fleste har det hver dag, men lovkravet slår inn etter 5,5 timer."
+    },
+    {
+      q: "Hva er 'oppsigelsestid'?",
+      a: ["Tiden det tar å skrive en søknad", "Tiden man må jobbe etter at man har sagt opp", "En pause i arbeidet", "Tiden man er sykemeldt"],
+      correct: 1,
+      hint: "Vanligvis er denne 1 til 3 måneder."
+    },
+    {
+      q: "Hva er 'medvirkningsplikt'?",
+      a: ["At man må betale for kaffen", "At ansatte plikter å bidra til et godt og trygt arbeidsmiljø", "At man må jobbe overtid", "At man må være venn med alle"],
+      correct: 1,
+      hint: "Du kan ikke bare se på at ting er farlig, du må si fra."
+    }
+  ];
+
+  const initializeGame = () => {
+    let lastCorrectIndex = -1;
+    const shuffled = rawQuestions.map((q) => {
+      const answersWithOriginalStatus = q.a.map((ans, index) => ({
+        text: ans,
+        isCorrect: index === q.correct
+      }));
+      let shuffledAnswers;
+      let newCorrectIndex;
+      let attempts = 0;
+      do {
+        shuffledAnswers = [...answersWithOriginalStatus].sort(() => Math.random() - 0.5);
+        newCorrectIndex = shuffledAnswers.findIndex(a => a.isCorrect);
+        attempts++;
+      } while (newCorrectIndex === lastCorrectIndex && attempts < 10);
+      lastCorrectIndex = newCorrectIndex;
+      return {
+        ...q,
+        a: shuffledAnswers.map(a => a.text),
+        correct: newCorrectIndex
+      };
+    });
+    setShuffledQuestions(shuffled);
+  };
+
+  useEffect(() => {
+    initializeGame();
+  }, []);
+
+  // Timer-logikk
+  useEffect(() => {
+    if (gameState === 'playing') {
+      setTimeLeft(30);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            setGameState('lost');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentQuestionIndex, gameState]);
+
+  const handleAnswer = (index) => {
+    if (index === shuffledQuestions[currentQuestionIndex].correct) {
+      if (currentQuestionIndex === shuffledQuestions.length - 1) {
+        setGameState('won');
+      } else {
+        setScore(moneyLadder[currentQuestionIndex]);
+        setCurrentQuestionIndex(prev => prev + 1);
+        setRemovedOptions([]);
+        setShowHint(null);
+      }
+    } else {
+      setGameState('lost');
+    }
+  };
+
+  const useFiftyFifty = () => {
+    if (!lifelines.fiftyFifty) return;
+    const correct = shuffledQuestions[currentQuestionIndex].correct;
+    let toRemove = [];
+    while (toRemove.length < 2) {
+      let rand = Math.floor(Math.random() * 4);
+      if (rand !== correct && !toRemove.includes(rand)) {
+        toRemove.push(rand);
+      }
+    }
+    setRemovedOptions(toRemove);
+    setLifelines(prev => ({ ...prev, fiftyFifty: false }));
+  };
+
+  const usePhoneFriend = () => {
+    if (!lifelines.phoneFriend) return;
+    setShowHint({ 
+      type: 'friend', 
+      text: `Vennen din sier: "Jeg er ganske sikker på at det er '${shuffledQuestions[currentQuestionIndex].a[shuffledQuestions[currentQuestionIndex].correct]}' som er riktig."` 
+    });
+    setLifelines(prev => ({ ...prev, phoneFriend: false }));
+  };
+
+  const useAskAudience = () => {
+    if (!lifelines.askAudience) return;
+    const correct = shuffledQuestions[currentQuestionIndex].correct;
+    const distribution = [12, 8, 15, 5];
+    distribution[correct] = 65; 
+    setShowHint({ 
+      type: 'audience', 
+      text: `Publikum stemmer: A: ${distribution[0]}%, B: ${distribution[1]}%, C: ${distribution[2]}%, D: ${distribution[3]}%` 
+    });
+    setLifelines(prev => ({ ...prev, askAudience: false }));
+  };
+
+  const restart = () => {
+    initializeGame();
+    setGameState('playing');
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setLifelines({ fiftyFifty: true, phoneFriend: true, askAudience: true });
+    setRemovedOptions([]);
+    setShowHint(null);
+    setTimeLeft(30);
+  };
+
+  if (shuffledQuestions.length === 0) return <div className="bg-slate-900 min-h-screen"></div>;
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white font-sans p-4 flex items-center justify-center">
+      <div className="w-full max-w-4xl bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700 relative">
+        
+        {/* Money Ladder Sidebar */}
+        <div className="absolute right-0 top-0 bottom-0 w-48 bg-slate-900/50 hidden lg:flex flex-col-reverse p-4 border-l border-slate-700">
+          {moneyLadder.map((amount, i) => (
+            <div key={i} className={`py-1 px-3 rounded mb-1 text-sm flex justify-between ${currentQuestionIndex === i ? 'bg-orange-500 text-white font-bold animate-pulse' : (currentQuestionIndex > i ? 'text-slate-500' : 'text-orange-300')}`}>
+              <span>{i + 1}</span>
+              <span>kr {amount}</span>
+            </div>
+          ))}
+        </div>
+
+        {gameState === 'start' && (
+          <div className="p-12 text-center space-y-8 lg:mr-48">
+            <div className="w-32 h-32 bg-orange-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-orange-500/20 animate-bounce">
+              <Trophy size={64} />
+            </div>
+            <h1 className="text-4xl font-black uppercase tracking-tighter">Arbeidslivs-millionær</h1>
+            <p className="text-slate-400 text-lg">Test dine kunnskaper om norsk arbeidskultur og lovverk. 30 sekunder per spørsmål!</p>
+            <button onClick={() => setGameState('playing')} className="bg-orange-500 hover:bg-orange-600 px-12 py-4 rounded-full font-bold text-xl transition-all active:scale-95 shadow-xl">Start spillet</button>
+          </div>
+        )}
+
+        {gameState === 'playing' && (
+          <div className="p-6 lg:mr-48 flex flex-col min-h-[550px]">
+            {/* Header: Lifelines & Timer */}
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex gap-4">
+                <button title="50/50" onClick={useFiftyFifty} disabled={!lifelines.fiftyFifty} className={`p-3 rounded-full border-2 transition-all ${lifelines.fiftyFifty ? 'border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white' : 'border-slate-700 text-slate-700'}`}>
+                  <Scissors size={20} />
+                </button>
+                <button title="Ring en venn" onClick={usePhoneFriend} disabled={!lifelines.phoneFriend} className={`p-3 rounded-full border-2 transition-all ${lifelines.phoneFriend ? 'border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white' : 'border-slate-700 text-slate-700'}`}>
+                  <Phone size={20} />
+                </button>
+                <button title="Spør publikum" onClick={useAskAudience} disabled={!lifelines.askAudience} className={`p-3 rounded-full border-2 transition-all ${lifelines.askAudience ? 'border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white' : 'border-slate-700 text-slate-700'}`}>
+                  <Users size={20} />
+                </button>
+              </div>
+
+              {/* Tidtaker-visning */}
+              <div className="flex flex-col items-center">
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 ${timeLeft <= 5 ? 'border-red-500 text-red-500 animate-pulse' : 'border-blue-500 text-blue-400'}`}>
+                  <Timer size={20} />
+                  <span className="font-mono text-xl font-bold">{timeLeft}s</span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Gevinst nå</p>
+                <p className="text-2xl font-black text-orange-400">kr {moneyLadder[currentQuestionIndex]}</p>
+              </div>
+            </div>
+
+            {/* Question */}
+            <div className="flex-grow flex flex-col justify-center text-center mb-10 px-4">
+              <p className="text-slate-400 mb-2 font-mono uppercase tracking-widest text-xs">Spørsmål {currentQuestionIndex + 1} av 15</p>
+              <h2 className="text-2xl sm:text-3xl font-bold leading-tight min-h-[80px]">{shuffledQuestions[currentQuestionIndex].q}</h2>
+            </div>
+
+            {/* Hint Box */}
+            {showHint && (
+              <div className="mb-6 p-4 bg-blue-900/30 border border-blue-500/50 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="text-blue-400 shrink-0" />
+                <p className="text-sm italic text-blue-100">{showHint.text}</p>
+              </div>
+            )}
+
+            {/* Answers Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {shuffledQuestions[currentQuestionIndex].a.map((ans, i) => (
+                <button
+                  key={i}
+                  disabled={removedOptions.includes(i)}
+                  onClick={() => handleAnswer(i)}
+                  className={`p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 group
+                    ${removedOptions.includes(i) ? 'opacity-0 cursor-default pointer-events-none' : 'border-slate-700 hover:border-orange-500 hover:bg-slate-700 active:scale-95'}
+                  `}
+                >
+                  <span className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-orange-500 font-bold text-xs group-hover:bg-orange-500 group-hover:text-white shrink-0">
+                    {['A', 'B', 'C', 'D'][i]}
+                  </span>
+                  <span className="font-medium text-sm sm:text-base leading-snug">{ans}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {gameState === 'lost' && (
+          <div className="p-12 text-center space-y-6 lg:mr-48">
+            <div className="text-red-500 text-6xl mb-4 italic font-black uppercase">{timeLeft === 0 ? 'TIDEN ER UTE!' : 'FEIL SVAR!'}</div>
+            <p className="text-xl">Du kom til spørsmål {currentQuestionIndex + 1} og vant kr {score}.</p>
+            <div className="bg-slate-900/50 p-6 rounded-2xl max-w-sm mx-auto">
+              <p className="text-slate-400 text-sm mb-2 uppercase font-bold tracking-widest">Riktig svar var:</p>
+              <p className="text-xl font-bold text-orange-400">{shuffledQuestions[currentQuestionIndex].a[shuffledQuestions[currentQuestionIndex].correct]}</p>
+            </div>
+            <button onClick={restart} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold mx-auto transition-all shadow-lg">
+              <RotateCcw size={18} /> Prøv igjen
+            </button>
+          </div>
+        )}
+
+        {gameState === 'won' && (
+          <div className="p-12 text-center space-y-8 lg:mr-48 bg-gradient-to-b from-slate-800 to-orange-900/20">
+            <div className="text-6xl mb-4 animate-bounce">👑</div>
+            <h2 className="text-4xl font-black text-orange-400 uppercase tracking-tighter">MILLIONÆR!</h2>
+            <p className="text-xl leading-relaxed">Du er en ekspert på det norske arbeidslivet og taklet tidspresset!</p>
+            <div className="text-5xl font-black text-white py-4 border-y-2 border-orange-500/30">kr 1 000 000</div>
+            <button onClick={restart} className="bg-orange-500 hover:bg-orange-600 px-10 py-4 rounded-full font-bold text-lg shadow-xl transition-all">Spill igjen</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
